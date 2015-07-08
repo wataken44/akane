@@ -1,8 +1,0 @@
-{
-  "recordedDir": "/mnt/data_01/ts/",
-  "lockFileDir": "/mnt/data_01/tmp/",
-  "apiEndpoint": "http://localhost:8080/api/"
-  "executeCommands": ["/home/chnachu/akane/sample/print.py"],
-  "executeTimeEstimationRatio": 4.2,
-  "executeTimeEstimationConstant": 600
-}
