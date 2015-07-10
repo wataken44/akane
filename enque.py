@@ -8,20 +8,37 @@
 
 import fcntl
 import json
+import logging
 import os
 import sys
 import time
 
 root_dir = os.path.abspath(os.path.dirname(__file__)) + "/"
+config = None
 
-def get_queue_file():
+def load_config():
     global root_dir
+    global config
     fp = open(root_dir + "config.json")
-    js = json.load(fp)
+    config = json.load(fp)
     fp.close()
-    return js["akane"]["metaDataDir"] + "/queue.json"
+
+def init_logger():
+    global config
+    logging.basicConfig(
+        filename=config["akane"]["metaFileDir"] + "/log-enque.txt",
+        format='%(asctime)s: %(message)s',
+        level=logging.INFO)
+    
+def get_queue_file():
+    global config
+    return config["akane"]["metaFileDir"] + "/queue.json"
 
 def main():
+    load_config()
+    init_logger()
+
+    logging.info("%s, %s" % (sys.argv[1], sys.argv[2]))
     added = json.loads(sys.argv[2])
     queue_file = get_queue_file()
     
@@ -30,13 +47,15 @@ def main():
         try:
             fp = open(queue_file, 'rw+')
             fcntl.flock(fp.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            logging.info("queue lock succeeded.")
             break
-        except:
+        except IOError as e:
+            logging.info("wait... (%s)" % str(e))
             time.sleep(2 ** (i + 3))
-    # todo need logging...
     if fp is None:
+        logging.info("queue lock succeeded.")
         return
-
+    
     js = json.load(fp)
     js.append(added)
     
