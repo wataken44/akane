@@ -178,7 +178,7 @@ class Dispatcher(object):
         s = datetime.datetime.utcfromtimestamp(next_recording_start)
         n = datetime.datetime.utcnow()
         dd = (s - n)
-        d = dd.days * 24 * 60 + dd.seconds
+        d = dd.days * 24 * 60 * 60 + dd.seconds
 
         r = self._config["akane"]["processTimeRatio"]
         c = self._config["akane"]["processTimeConstant"]
