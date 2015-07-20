@@ -170,13 +170,13 @@ class Dispatcher(object):
         
     def get_dispatchable_seconds(self):
         """ 次の録画開始時間までに処理可能な録画済みの動画の長さを返す """
-        next_recording_start = self.get_next_recording_start()
-        if next_recording_start is None:
+        n = datetime.datetime.utcnow()
+
+        s = self.get_next_recording_start(n)
+        if s is None:
             # 録画がないときは1週間 
             return 7 * 24 * 60 * 60
 
-        s = datetime.datetime.utcfromtimestamp(next_recording_start)
-        n = datetime.datetime.utcnow()
         dd = (s - n)
         d = dd.days * 24 * 60 * 60 + dd.seconds
 
@@ -187,19 +187,21 @@ class Dispatcher(object):
         
         return (d - c) / r
         
-    def get_next_recording_start(self):
+    def get_next_recording_start(self, now):
         """ 次の録画開始時間を返す """
         reserves = self.get_api("reserves.json")
 
-        # 次の録画開始時間, unixtime
-        start = None
-        if len(reserves) > 0:
-            start = reserves[0]["start"] 
-            for r in reserves:
-                start = min(start, r["start"])
-        else:
-            return None    
-        return start / 1000
+        # 次の録画開始時間
+        ret = None
+        for r in reserves:
+            s = datetime.datetime.utcfromtimestamp(r["start"] / 1000)
+            if now <= s:
+                if ret is not None:
+                    ret = min(ret, s)
+                else:
+                    ret = s
+
+        return ret
 
     def process_task(self, task):
         task_id = task["id"]
