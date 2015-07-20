@@ -53,6 +53,11 @@ $ vi config.json
 }
 ```
 
+queueの初期化
+```
+$ echo '[]' > <metaFileDir>/queue.json
+```
+
 補足
 * lockFileDir, metaFileDirは手動で作成要。slashで終わらなければいけない。
 * 録画された動画を処理する条件は (次の予約までの時間[秒]) > processTimeRatio * (動画の長さ[秒]) + processTimeConstant
