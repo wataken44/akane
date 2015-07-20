@@ -78,7 +78,7 @@ $ vi encode-config.json
 ```
 
 補足
-* commandの<recorded>は録画されたファイルのフルパス、<encoded>は <encodedDir>/<録画されたファイルのbasename><encodedExt> に置換される
+* commandの&lt;recorded&gt;は録画されたファイルのフルパス、&lt;encoded&gt;は &lt;encodedDir&gt;/&lt;録画されたファイルのbasename&gt;&lt;encodedExt&gt; に置換される
 
 #### cronの設定
 
