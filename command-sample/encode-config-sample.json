@@ -1,0 +1,7 @@
+{
+  "log": "/mnt/data_01/meta/log-encode.txt",
+  "encodedDir": "/mnt/data_01/mp4",
+  "encodedExt": ".mp4",
+  "encodedInfoFile": "/mnt/data_01/meta/encoded.json",
+  "command": "/home/chinachu/Chinachu/usr/bin/ffmpeg -y -i '<recorded>' -f mp4 -vcodec libx264 -fpre /mnt/data_01/etc/libx264-hq-ts.ffpreset -r 30000/1001 -aspect 16:9 -s 1280x720 -b:v 1800000 -minrate 1800000 -pass 1 -an -movflags faststart '<encoded>' 2>&1 > /mnt/data_01/meta/log-ffmpeg.txt && /home/chinachu/Chinachu/usr/bin/ffmpeg -y -i '<recorded>' -f mp4 -vcodec libx264 -fpre /mnt/data_01/etc/libx264-hq-ts.ffpreset -r 30000/1001 -aspect 16:9 -s 1280x720 -bufsize 20000k -b:v 1800000 -minrate 1800000 -pass 2 -movflags faststart '<encoded>' 2>&1 >> /mnt/data_01/meta/log-ffmpeg.txt"
+}
