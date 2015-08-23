@@ -146,6 +146,11 @@ class Dispatcher(object):
         task = []
         js = json.loads(fp.read())
 
+        # queueが空なら何もしない
+        if len(js) == 0:
+            fp.close()
+            sys.exit(0)
+
         for i in range(count):
             for k in range(len(js)):
                 if js[k]["seconds"] < dispatchable_seconds:
