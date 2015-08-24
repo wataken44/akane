@@ -129,8 +129,6 @@ class Dispatcher(object):
 
     def dispatch_task(self, count=1):
         """ taskを実行する """
-        dispatchable_seconds = self.get_dispatchable_seconds()
-
         # queueをopen
         fp = None
         try:
@@ -151,6 +149,8 @@ class Dispatcher(object):
             fp.close()
             sys.exit(0)
 
+        dispatchable_seconds = self.get_dispatchable_seconds()
+            
         for i in range(count):
             for k in range(len(js)):
                 if js[k]["seconds"] < dispatchable_seconds:
