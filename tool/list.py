@@ -50,7 +50,8 @@ def filter_files(filename, search):
         data = filter(
             lambda item: (
                 item['title'].find(search) >= 0 or
-                item['fullTitle'].find(search) >= 0),
+                item['fullTitle'].find(search) >= 0 or
+                item['recorded'].find(search) >= 0),
             js)
     return data
         
