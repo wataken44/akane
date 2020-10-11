@@ -13,19 +13,31 @@ import glob
 import json
 import logging
 import os
+import pipes
+import shlex
+import subprocess
 import sys
 import threading
 
 try:
-    from urllib.request import build_opener, HTTPPasswordMgrWithDefaultRealm, HTTPBasicAuthHandler
+    from urllib.request import (
+        build_opener,
+        HTTPPasswordMgrWithDefaultRealm,
+        HTTPBasicAuthHandler,
+    )
 except:
-    from urllib2 import build_opener, HTTPPasswordMgrWithDefaultRealm, HTTPBasicAuthHandler
+    from urllib2 import (
+        build_opener,
+        HTTPPasswordMgrWithDefaultRealm,
+        HTTPBasicAuthHandler,
+    )
 
 root_dir = os.path.abspath(os.path.dirname(__file__)) + "/"
 
 reload(sys)
-sys.setdefaultencoding('utf-8')
-sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+sys.setdefaultencoding("utf-8")
+sys.stdout = codecs.getwriter("utf-8")(sys.stdout)
+
 
 class Dispatcher(object):
     def __init__(self):
@@ -39,12 +51,12 @@ class Dispatcher(object):
 
         self._opener = None
         self.init_opener()
-         
+
     def run(self):
         if self.is_recording():
             self.log("chinachu is recording. exit.")
             sys.exit(1)
-            
+
         self.clean_defunct_task()
 
         processing_task_count = self.count_processing_task()
@@ -65,8 +77,9 @@ class Dispatcher(object):
         """ loggerを初期化 """
         logging.basicConfig(
             filename=self._config["akane"]["log"],
-            format='%(asctime)s: %(message)s',
-            level=logging.INFO)
+            format="%(asctime)s: %(message)s",
+            level=logging.INFO,
+        )
         self._logger = True
 
     def log(self, msg, *args, **kwargs):
@@ -83,7 +96,7 @@ class Dispatcher(object):
         pm.add_password(None, url, user, password)
         handler = HTTPBasicAuthHandler(pm)
         self._opener = build_opener(handler)
-        
+
     def get_api(self, path):
         """ chinachuのAPIにアクセスする """
         url = self._config["chinachu"]["apiEndpoint"]
@@ -105,11 +118,11 @@ class Dispatcher(object):
         pattern = self._config["akane"]["lockFileDir"] + "/*.lock"
         files = glob.glob(pattern)
         for f in files:
-            fn = f.encode('utf-8')
+            fn = f.encode("utf-8")
             fp = None
             defunct = False
             try:
-                fp = open(fn, 'rw+')
+                fp = open(fn, "rw+")
                 fcntl.flock(fp.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                 # 通常taskは開始時にlockファイル生成し、終了時にlockファイル削除する
                 # lockが取れる場合、異常終了している
@@ -133,7 +146,7 @@ class Dispatcher(object):
         fp = None
         try:
             fn = self._config["akane"]["metaFileDir"] + "/queue.json"
-            fp = open(fn, 'rw+')
+            fp = open(fn, "rw+")
             fcntl.flock(fp.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
             self.log("akane cannot open queue file(maybe locked or not exist). exit.")
@@ -150,7 +163,7 @@ class Dispatcher(object):
             sys.exit(0)
 
         dispatchable_seconds = self.get_dispatchable_seconds()
-            
+
         for i in range(count):
             for k in range(len(js)):
                 if js[k]["seconds"] < dispatchable_seconds:
@@ -160,9 +173,9 @@ class Dispatcher(object):
         # queueを更新する
         fp.truncate(0)
         fp.seek(0)
-        fp.write(json.dumps(js, ensure_ascii=False).encode('utf-8'))
+        fp.write(json.dumps(js, ensure_ascii=False).encode("utf-8"))
         fp.close()
-        
+
         thread = []
         for t in task:
             thread.append(threading.Thread(target=self.process_task, args=(t,)))
@@ -172,26 +185,29 @@ class Dispatcher(object):
 
         for th in thread:
             th.join()
-        
+
     def get_dispatchable_seconds(self):
         """ 次の録画開始時間までに処理可能な録画済みの動画の長さを返す """
         n = datetime.datetime.utcnow()
 
         s = self.get_next_recording_start(n)
         if s is None:
-            # 録画がないときは1週間 
+            # 録画がないときは1週間
             return 7 * 24 * 60 * 60
 
-        dd = (s - n)
+        dd = s - n
         d = dd.days * 24 * 60 * 60 + dd.seconds
 
         r = self._config["akane"]["processTimeRatio"]
         c = self._config["akane"]["processTimeConstant"]
 
-        self.log("next = %s, now = %s, delta = %d, dispatable = %f" % (str(s), str(n), d, (d - c)/r))
-        
+        self.log(
+            "next = %s, now = %s, delta = %d, dispatable = %f"
+            % (str(s), str(n), d, (d - c) / r)
+        )
+
         return (d - c) / r
-        
+
     def get_next_recording_start(self, now):
         """ 次の録画開始時間を返す """
         reserves = self.get_api("reserves.json")
@@ -212,35 +228,59 @@ class Dispatcher(object):
         task_id = task["id"]
         title = task["fullTitle"]
         recorded = task["recorded"]
-        lock = self._config["akane"]["lockFileDir"] + "/" + os.path.basename(recorded) + ".lock"
-        
-        recorded = recorded.encode('utf-8')
-        lock = lock.encode('utf-8')
+        lock = (
+            self._config["akane"]["lockFileDir"]
+            + "/"
+            + os.path.basename(recorded)
+            + ".lock"
+        )
+
+        recorded = recorded.encode("utf-8")
+        lock = lock.encode("utf-8")
 
         fp = None
         try:
             if os.path.exists(lock):
-                fp = open(lock, 'rw+')
+                fp = open(lock, "rw+")
             else:
-                fp = open(lock, 'w+')
+                fp = open(lock, "w+")
             fcntl.flock(fp.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError as e:
             self.log("cannot get lock: %s" % str(e))
             return
-        
+
         self.log("start: (%s, %s, %s)" % (task_id, title, recorded))
 
         for command in self._config["akane"]["processCommands"]:
-            c = "%s '%s' '%s'" % (command, recorded, json.dumps(task, ensure_ascii=False).encode('utf-8'))
-            self.log("command: %s" % c)
-            os.system(c)
-        
+            js = json.dumps(task, ensure_ascii=False).encode("utf-8")
+            args = [command, recorded, js]
+
+            self.log(
+                "command: %s %s %s" % [command, shell_quote(recorded), shell_quote(js)]
+            )
+            subprocess.call(args)
+
         self.log("end: (%s, %s, %s)" % (task_id, title, recorded))
         fp.close()
+
+
+def shell_quote(s):
+    r = None
+    try:
+        r = shlex.quote(s)
+    except:
+        try:
+            r = pipes.quote(s)
+        except:
+            r = "'" + s.replace("'", "'\\''") + "'"
+
+    return r
+
 
 def main():
     dispatcher = Dispatcher()
     dispatcher.run()
-        
+
+
 if __name__ == "__main__":
     main()
