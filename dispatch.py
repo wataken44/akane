@@ -256,7 +256,7 @@ class Dispatcher(object):
             args = [command, recorded, js]
 
             self.log(
-                "command: %s %s %s" % [command, shell_quote(recorded), shell_quote(js)]
+                "command: %s %s %s" % (command, shell_quote(recorded), shell_quote(js))
             )
             subprocess.call(args)
 
